@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista przetargów</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<header>
+    <h1>Aplikacja Przetargi</h1>
+    <nav>
+        <ul>
+            <li><a href="index.html">Strona główna</a></li>
+            <li><a href="lista_przetargow.html">Lista przetargów</a></li>
+            <li><a href="lista_zakonczonych_przetargow.html">Lista zakończonych przetargów</a></li>
+            <li><a href="dodaj_przetarg.html">Dodaj przetarg</a></li>
+        </ul>
+    </nav>
+</header>
+
+<main>
+    <section id="lista-przetargow-section">
+        <h2>Lista przetargów</h2>
+        <table>
+            <thead>
+            <tr>
+                <th>Lp.</th>
+                <th>Nazwa przetargu</th>
+                <th>Data rozpoczęcia</th>
+                <th>Data zakończenia</th>
+            </tr>
+            </thead>
+            <tbody id="przetargi-list">
+            </tbody>
+        </table>
+    </section>
+</main>
+
+<footer>
+    <p>&copy; 2024 Aplikacja Przetargi. Wszelkie prawa zastrzeżone.</p>
+</footer>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Funkcja do pobierania listy przetargów
+        function getPretargi() {
+            fetch('/api/przetargi') // Wywołanie endpointu API przetargów
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Problem z pobraniem listy przetargów');
+                    }
+                    return response.json();
+                })
+                .then(przetargi => {
+                    wyswietlPrzetargi(przetargi); // Wywołanie funkcji wyświetlającej przetargi
+                })
+                .catch(error => {
+                    console.error('Błąd:', error);
+                });
+        }
+
+        // Funkcja do wstawiania przetargów do tabeli na stronie
+        function wyswietlPrzetargi(przetargi) {
+            const tabelaPrzetargow = document.getElementById('przetargi-list');
+
+            // Usunięcie istniejących wierszy z tabeli, aby uniknąć powielania danych
+            tabelaPrzetargow.innerHTML = '';
+
+            // Iteracja przez wszystkie przetargi i dodanie ich do tabeli
+            przetargi.forEach((przetarg, index) => {
+                const wiersz = document.createElement('tr');
+                wiersz.innerHTML = `
+                <td>${index + 1}</td>
+                <td>${przetarg.nazwa}</td>
+                <td>${formatujDate(przetarg.data_rozpoczecia)}</td>
+                <td>${formatujDate(przetarg.data_zakonczenia)}</td>
+            `;
+                tabelaPrzetargow.appendChild(wiersz);
+            });
+        }
+
+        // Funkcja do formatowania daty w czytelny sposób
+        function formatujDate(dateString) {
+            const data = new Date(dateString);
+            return data.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
+
+        // Wywołanie funkcji do pobierania listy przetargów po załadowaniu strony
+        getPretargi();
+    });
+</script>
+</body>
+</html>
