@@ -1,0 +1,65 @@
+
+
+
+<div class="modal">
+    <h2><%= tender.title %></h2>
+    <p><%= tender.description %></p>
+    <p>Instytucja: <%= tender.institution %></p>
+    <p>Data rozpoczęcia: <%= tender.start_time %></p>
+    <p>Data zakończenia: <%= tender.end_time %></p>
+    <p>Budżet maks.: <%= tender.max_budget %></p>
+    <button class="close-modal" id="close-modal-btn">Zamknij</button>
+    <% if (tender.start_time <= new Date() && tender.end_time >= new Date()) { %>
+      <button class="submit-offer-btn" id="submit-offer-btn">Złóż ofertę</button>
+    <% } %>
+  
+    <div class="offer-form" style="display: none;">
+      <h3>Złóż ofertę</h3>
+      <form id="offer-form" action="/tenders/<%= tender.id %>/offer" method="post">
+        <label for="bidder-name">Nazwa składającego ofertę:</label>
+        <input type="text" id="bidder-name" name="bidder_name" required>
+        <br>
+        <label for="offer-amount">Wartość oferty:</label>
+        <input type="number" id="offer-amount" name="offer_amount" required>
+        <br>
+        <input type="submit" value="Złóż ofertę">
+      </form>
+    </div>
+  
+    <script>
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        closeModalBtn.addEventListener('click', () => {
+          document.querySelector('.modal').style.display = 'none';
+          window.location.href = '/tenders';
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const submitOfferBtn = document.getElementById('submit-offer-btn');
+            //const tenderId = <%= tender.id %>;
+            submitOfferBtn.addEventListener('click', () => {
+              window.location.href = `/tenders/${tender.id}/offer`;
+            });
+        });
+
+        offerFormSubmit.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const bidderName = offerForm.querySelector('#bidder-name').value;
+            const offerAmount = offerForm.querySelector('#offer-amount').value;
+            const currentTime = new Date();
+            const tenderId = window.location.pathname.split('/')[2]; // Get the tender ID from the URL
+          
+            const response = await fetch(`/tenders/${tenderId}/offer`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bidder_name: bidderName, offer_amount: offerAmount, offer_time: currentTime }),
+              });
+          
+            if (response.ok) {
+              document.querySelector('.modal').style.display = 'none';
+              window.location.reload();
+            } else {
+              console.error('Error submitting offer:', response.status);
+            }
+        });
+    </script>
+  </div>

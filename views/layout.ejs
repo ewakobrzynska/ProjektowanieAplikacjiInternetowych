@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>System Przetargów</title>
+  <link rel="stylesheet" type="text/css" href="/styles.css">
+</head>
+<body>
+  <nav>
+    <ul>
+      <li><a href="/">Strona główna</a></li>
+      <li><a href="/tenders">Lista przetargów</a></li>
+      <li><a href="/closed-tenders">Lista zakończonych przetargów</a></li>
+      <li><a href="/add-tender">Dodaj przetarg</a></li>
+    </ul>
+  </nav>
+  <main>
+    <%= content || 'No content provided' %>
+  </main>
+
+  <script>
+    $(document).ready(function() {
+      $('.tender-link').on('click', function(e) {
+        e.preventDefault();
+        const tenderId = $(this).data('tender-id');
+        $.ajax({
+          type: 'GET',
+          url: `/tenders/${tenderId}`,
+          success: function(html) {
+            $('body').append(html);
+            $('.modal').fadeIn();
+          }
+        });
+      });
+  
+      $(document).on('click', '.close-modal', function() {
+        $('.modal').fadeOut();
+      });
+    });
+  </script>
+  
+</body>
+</html>

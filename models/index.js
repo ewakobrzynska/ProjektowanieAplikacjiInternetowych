@@ -1,43 +1,56 @@
-'use strict';
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/database');
 
-const fs = require('fs');
-const path = require('path');
-const Sequelize = require('sequelize');
-const process = require('process');
-const basename = path.basename(__filename);
-const env = process.env.NODE_ENV || 'development';
-const config = require(__dirname + '/../config/config.json')[env];
-const db = {};
-
-let sequelize;
-if (config.use_env_variable) {
-  sequelize = new Sequelize(process.env[config.use_env_variable], config);
-} else {
-  sequelize = new Sequelize(config.database, config.username, config.password, config);
-}
-
-fs
-  .readdirSync(__dirname)
-  .filter(file => {
-    return (
-      file.indexOf('.') !== 0 &&
-      file !== basename &&
-      file.slice(-3) === '.js' &&
-      file.indexOf('.test.js') === -1
-    );
-  })
-  .forEach(file => {
-    const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes);
-    db[model.name] = model;
-  });
-
-Object.keys(db).forEach(modelName => {
-  if (db[modelName].associate) {
-    db[modelName].associate(db);
+// Model dla tabeli `tenders`
+const Tender = sequelize.define('Tender', {
+  title: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  description: {
+    type: DataTypes.TEXT
+  },
+  institution: {
+    type: DataTypes.STRING
+  },
+  start_time: {
+    type: DataTypes.DATE
+  },
+  end_time: {
+    type: DataTypes.DATE
+  },
+  max_budget: {
+    type: DataTypes.DECIMAL(10, 2)
+  },
+      is_ongoing: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true
   }
 });
 
-db.sequelize = sequelize;
-db.Sequelize = Sequelize;
+// Model dla tabeli `offers`
+const Offer = sequelize.define('Offer', {
+  tender_id: {
+    type: DataTypes.INTEGER,
+    references: {
+      model: Tender,
+      key: 'id'
+    }
+  },
+  bidder_name: {
+    type: DataTypes.STRING
+  },
+  offer_amount: {
+    type: DataTypes.DECIMAL(10, 2)
+  },
+  offer_time: {
+    type: DataTypes.DATE
+  }
+});
 
-module.exports = db;
+// Relacje
+Tender.hasMany(Offer, { foreignKey: 'tender_id' });
+Offer.belongsTo(Tender, { foreignKey: 'tender_id' });
+
+// Eksport modeli
+module.exports = { Tender, Offer };

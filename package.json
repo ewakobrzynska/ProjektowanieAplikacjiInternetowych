@@ -1,19 +1,26 @@
 {
-  "name": "przetargi",
+  "name": "projektprzetargi",
   "version": "1.0.0",
-  "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js",
+    "dev": "nodemon appjs"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "description": "",
   "dependencies": {
-    "mysql": "^2.18.1",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
+    "express-handlebars": "^8.0.1",
+    "mysql2": "^3.11.0",
+    "sequelize": "^6.37.3",
     "sqlite3": "^5.1.7"
   },
   "devDependencies": {
-    "sequelize-cli": "^6.6.2"
+    "nodemon": "^3.1.4"
   }
 }

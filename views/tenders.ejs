@@ -1,0 +1,80 @@
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f5f5f5;
+  }
+
+  .container {
+    max-width: 960px;
+    margin: 40px auto;
+    padding: 20px;
+    background-color: #ffffff;
+    border: 1px solid #dddddd;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+
+  h1 {
+    margin-top: 0;
+    font-weight: bold;
+    color: #337ab7;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th,
+  td {
+    padding: 10px;
+    border: 1px solid #dddddd;
+  }
+
+  th {
+    background-color: #f5f5f5;
+    font-weight: bold;
+  }
+
+  tr:nth-child(even) {
+    background-color: #f5f5f5;
+  }
+
+  a {
+    text-decoration: none;
+    color: #337ab7;
+  }
+
+  a:hover {
+    text-decoration: underline;
+    color: #23527c;
+  }
+</style>
+
+<div class="container">
+  <h1>LISTA PRZETARGÓW</h1>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Lp.</th>
+        <th>Tytuł</th>
+        <th>Opis</th>
+        <th>Instytucja</th>
+        <th>Start</th>
+        <th>Koniec</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% tenders.forEach((tender, index) => { %>
+        <tr>
+          <td><%= index + 1 %></td>
+          <td><a href="/tenders/<%= tender.id %>"><%= tender.title %></a></td>
+          <td><%= tender.description %></td>
+          <td><%= tender.institution %></td>
+          <td><%= moment(tender.start_time).format('YYYY-MM-DD HH:mm') %></td>
+          <td><%= moment(tender.end).format('YYYY-MM-DD HH:mm') %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>

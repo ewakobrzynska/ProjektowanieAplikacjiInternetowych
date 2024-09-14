@@ -1,54 +1,127 @@
 const express = require('express');
-const bodyParser = require('body-parser');
-const path = require('path');
 const app = express();
-const PORT = 3000; // lub inny port, który chcesz użyć
-const Przetarg = require('./backend/models/przetarg');
+const router = express.Router();
+const { Tender, Offer } = require('./models');
+const moment = require('moment');
+const { Op } = require('sequelize');
 
-// Middleware
-app.use(bodyParser.json());
-app.use(express.static('public')); // Dla plików statycznych (np. HTML, CSS, JS)
+app.set('view engine', 'ejs');
+app.set('views', './views');
 
-app.use(express.static(path.join(__dirname, 'frontend')));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
-// Obsługa żądania GET dla głównej ścieżki "/"
+app.use('/', router);
+
 app.get('/', (req, res) => {
-    // Serwowanie pliku index.html z katalogu publicznego
-    res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
+  res.render('home', { content: 'Aplikacja umożliwia ogłaszanie i przeglądanie przetargów.' });
 });
 
-app.post('/dodaj_przetarg', async (req, res) => {
-    try {
-        // Pobranie danych przetargu z ciała żądania
-        const { nazwa, opis, data_rozpoczecia, data_zakonczenia, max_wartosc } = req.body;
-
-        // Tutaj możesz dodać kod do dodawania przetargu do bazy danych
-        await Przetarg.create({
-            nazwa,
-            opis,
-            data_rozpoczecia,
-            data_zakonczenia,
-            max_wartosc
-        });
-
-        // Jeśli dodawanie przetargu zakończyło się sukcesem, możesz odpowiedzieć sukcesem
-        res.status(200).json({ message: 'Przetarg został dodany pomyślnie.' });
-    } catch (error) {
-        // Jeśli wystąpił błąd podczas dodawania przetargu, możesz odpowiedzieć błędem
-        console.error('Błąd podczas dodawania przetargu:', error);
-        res.status(500).json({ message: 'Wystąpił błąd podczas dodawania przetargu. Spróbuj ponownie.' });
+app.get('/tenders', async (req, res) => {
+  const tenders = await Tender.findAll({
+    where: {
+      end_time: {
+        [Op.gte]: new Date() 
+      }
     }
+  });
+  res.render('tenders', { tenders, moment });
 });
 
-// Routing
-const przetargiRouter = require('./backend/routes/przetargRoutes');
-app.use('/api/przetargi', przetargiRouter); // Endpointy związane z przetargami
-
-
-// Start serwera
-app.listen(PORT, () => {
-    console.log(`Serwer uruchomiony na porcie ${PORT}`);
+app.get('/tenders/:id', async (req, res) => {
+  const tender = await Tender.findByPk(req.params.id);
+  if (!tender) {
+    res.status(404).send('Tender not found');
+  } else {
+    res.render('tender-modal', { tender, moment });
+  }
 });
 
-console.log('Aplikacja dostępna pod adresem: http://localhost:' + PORT);
+app.get('/closed-tenders', async (req, res) => {
+  const closedTenders = await Tender.findAll({
+    where: {
+      end_time: {
+        [Op.lt]: new Date() 
+      }
+    }
+  });
+  res.render('closedTenders', { closedTenders, moment });
+});
 
+app.get('/closed-tenders/:id', async (req, res) => {
+  const closedTender = await Tender.findByPk(req.params.id);
+  if (!closedTender) {
+    res.status(404).send('Tender not found');
+  } else {
+    const offers = await Offer.findAll({
+      where: {
+        tender_id: closedTender.id
+      },
+      order: [['offer_amount', 'ASC']]
+    });
+
+    const validOffers = offers.filter(offer => offer.offer_amount <= closedTender.max_budget);
+
+    if (validOffers.length === 0) {
+      res.render('closedTenderDetails', { closedTender, message: 'Przetarg zakończony bez rozstrzygnięcia. Wszystkie oferty przekraczają budżet.' });
+    } else {
+      res.render('closedTenderDetails', { closedTender, offers: validOffers, message: '' });
+    }
+  }
+});
+
+app.get('/add-tender', (req, res) => {
+  res.render('addTender', { layout: 'layout' });
+});
+
+app.post('/add-tender', async (req, res) => {
+  const { title, description, institution, start_time, end_time, max_budget } = req.body;
+  try {
+    await Tender.create({ title, description, institution, start_time, end_time, max_budget });
+    res.redirect('/tenders');
+  } catch (err) {
+    console.error('Błąd podczas dodawania przetargu:', err);
+    res.status(500).send('Wystąpił błąd.');
+  }
+});
+
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).send('Wystąpił błąd.');
+});
+
+router.get('/tenders/:id/offer', (req, res) => {
+  const tenderId = req.params.id;
+  res.render('offer-form', { tenderId });
+});
+
+router.post('/tenders/:id/offer', async (req, res) => {
+  const tender = await Tender.findByPk(req.params.id);
+  const currentTime = new Date();
+
+  if (currentTime >= tender.start_time && currentTime <= tender.end_time) {
+    await Offer.create({
+      bidder_name: req.body.bidder_name,
+      offer_amount: req.body.offer_amount,
+      offer_time: currentTime,
+      tender_id: tender.id,
+    });
+    res.redirect(`/tenders/${tender.id}`);
+  } else {
+    res.send('Przetarg jest zakończony lub jeszcze się nie rozpoczął.');
+  }
+});
+
+const sequelize = require('./config/database');
+
+sequelize.sync({ force: true })
+  .then(() => {
+    console.log('Baza danych została zsynchronizowana.');
+
+    app.listen(3000, () => {
+      console.log('Serwer działa na http://localhost:3000');
+    });
+  })
+  .catch(err => {
+    console.error('Błąd synchronizacji bazy danych:', err);
+  });
